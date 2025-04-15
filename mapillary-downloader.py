@@ -85,6 +85,6 @@ for row in df.itertuples():
     temp.addFeature(f)
     
 # saving changes and adding the layer
-temp.loadNamedStyle('/home/huyotaku/Downloads/spacetime/style.qml')
+temp.loadNamedStyle('https://raw.githubusercontent.com/kaheetonaa/mapillary2qgis4all/refs/heads/main/style.qml')
 temp.commitChanges()
 QgsProject.instance().addMapLayer(temp)
