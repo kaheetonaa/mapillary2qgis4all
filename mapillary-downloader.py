@@ -86,7 +86,10 @@ for row in df.itertuples():
     temp.addFeature(f)
     
 # saving changes and adding the layer
-urllib.request.urlretrieve("https://raw.githubusercontent.com/kaheetonaa/mapillary2qgis4all/refs/heads/main/style.qml", "/tmp/mapillary-style.qml") 
-temp.loadNamedStyle('/tmp/mapillary-style.qml')
+fp=urllib.request.urlopen("https://raw.githubusercontent.com/kaheetonaa/mapillary2qgis4all/refs/heads/main/style.qml") 
+mybytes = fp.read()
+mapillary_style = QDomDocument()
+mapillary_style.setContent(mybytes)
+temp.importNamedStyle(mapillary_style)
 temp.commitChanges()
 QgsProject.instance().addMapLayer(temp)
