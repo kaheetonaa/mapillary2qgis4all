@@ -1,6 +1,7 @@
 import urllib.request, json 
 import pandas as pd
 from pyproj import Transformer
+import urllib.request
 
 #check canvas
 
@@ -19,8 +20,8 @@ print(transform_extent)
 #download from Mapillary
 
 limit_number=10
-start_date="2015-01-11T00:00:00Z"
-end_date="2015-12-31T23:59:59Z"
+start_date="2025-01-11T00:00:00Z"
+end_date="2025-12-31T23:59:59Z"
 user=NULL #NULL
 pano="false"
 
@@ -85,6 +86,7 @@ for row in df.itertuples():
     temp.addFeature(f)
     
 # saving changes and adding the layer
-temp.loadNamedStyle('https://raw.githubusercontent.com/kaheetonaa/mapillary2qgis4all/refs/heads/main/style.qml')
+urllib.request.urlretrieve("https://raw.githubusercontent.com/kaheetonaa/mapillary2qgis4all/refs/heads/main/style.qml", "/tmp/mapillary-style.qml") 
+temp.loadNamedStyle('/tmp/mapillary-style.qml')
 temp.commitChanges()
 QgsProject.instance().addMapLayer(temp)
