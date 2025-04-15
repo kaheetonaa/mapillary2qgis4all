@@ -1,0 +1,1 @@
+# mapillary2qgis4all
