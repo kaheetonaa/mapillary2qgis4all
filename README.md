@@ -4,7 +4,7 @@ This piece of python code will download Mapillary data in QGIS canvas as a Point
 
 ## Usage
 
-1. Copy all code inside mapillary-downloader.py into **Python console editor** in QGIS (Plugins/Python Console/Show editor)
+1. Copy all code inside mapillary-downloader.py ([here](https://raw.githubusercontent.com/kaheetonaa/mapillary2qgis4all/refs/heads/main/mapillary-downloader.py)) into **Python console editor** in QGIS (Plugins/Python Console/Show editor)
 2. Modify **parameters** to fit the need.
 3. Click **"Run Script"** to run
 
