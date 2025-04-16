@@ -17,4 +17,4 @@ This piece of python code will download Mapillary data in QGIS canvas as a Point
 * pano: including **panoramic photo** (current:"false")
 
 ## Screenshots
-!(Screenshot of the code result)[https://github.com/kaheetonaa/mapillary2qgis4all/blob/main/img/screenshot.png?raw=true "Screenshot of the code result"]
+![Screenshot of the code result](https://github.com/kaheetonaa/mapillary2qgis4all/blob/main/img/screenshot.png?raw=true "Screenshot of the code result")
