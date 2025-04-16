@@ -17,4 +17,7 @@ This piece of python code will download Mapillary data in QGIS canvas as a Point
 * pano: including **panoramic photo** (current:"false")
 
 ## Screenshots
+Screenshot of the result after running code.
 ![Screenshot of the code result](https://github.com/kaheetonaa/mapillary2qgis4all/blob/main/img/screenshot.png?raw=true "Screenshot of the code result")
+If you turn on "Show map tips" in QGIS, you can preview the image with its id when hovering mouse.
+![Hover with preview](https://raw.githubusercontent.com/kaheetonaa/mapillary2qgis4all/refs/heads/main/img/hover.png "Hover with preview")
