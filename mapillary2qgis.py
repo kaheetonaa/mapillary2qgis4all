@@ -332,7 +332,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
                 input = json.load(url)
                 photo={}
                 try:
-                    photo['id']=input['id']
+                    photo['id']=i['id']
                     photo['angle']=input['compass_angle']
                     photo['captured_at']=input['captured_at']
                     photo['thumb_256_url']=input['thumb_256_url']
