@@ -21,3 +21,5 @@ Screenshot of the result after running code.
 ![Screenshot of the code result](https://github.com/kaheetonaa/mapillary2qgis4all/blob/main/img/screenshot.png?raw=true "Screenshot of the code result")
 If you turn on "Show map tips" in QGIS, you can preview the image with its id when hovering mouse.
 ![Hover with preview](https://raw.githubusercontent.com/kaheetonaa/mapillary2qgis4all/refs/heads/main/img/hover.png "Hover with preview")
+
+<a href='https://ko-fi.com/A0A0D8YFT' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
