@@ -297,7 +297,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         temp_data = temp.dataProvider()
         
         columns=['id','id_mapillary','angle','captured_at','thumb_256','url',"x","y","altitude"]
-        type=[QVariant.Double,QVariant.Double,QVariant.Double,QVariant.String,QVariant.String,QVariant.String,QVariant.Float,QVariant.Float,QVariant.Float]
+        type=[QVariant.Double,QVariant.String,QVariant.Double,QVariant.String,QVariant.String,QVariant.String,QVariant.Double,QVariant.Double,QVariant.Double]
 
         sink_fields=QgsFields()
         
