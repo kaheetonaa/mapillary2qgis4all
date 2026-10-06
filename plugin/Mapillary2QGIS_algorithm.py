@@ -43,6 +43,7 @@ from qgis.core import (QgsProcessing,
                        QgsWkbTypes,
                        QgsProject,
                        QgsProcessingParameterExtent,
+                       QgsProcessingParameterBoolean,
                        QgsFeature,
                        QgsGeometry,
                        QgsPointXY,
@@ -82,7 +83,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
     USER='USER'
     API='API'
     LIMIT='LIMIT'
-
+    PANORAMA="PANORAMA"
     def tr(self, string):
         """
         Returns a translatable string with the self.tr() function.
@@ -173,6 +174,17 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         )
         
         self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.PANORAMA,
+                self.tr('Panoramic photos'),
+                optional=False,
+                defaultValue = False
+                #[QgsProcessing.SourceType.TypeVectorAnyGeometry]
+            )
+        )
+        
+
+        self.addParameter(
             QgsProcessingParameterNumber(
                 self.LIMIT,
                 self.tr('Limitation of downloaded images'),
@@ -231,7 +243,13 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
             self.EXTENT,
             context
         )
-        
+
+        pano= self.parameterAsBoolean(
+            parameters,
+            self.PANORAMA,
+            context
+        )
+
         api=self.parameterAsString(
             parameters,
             self.API,
@@ -278,7 +296,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         temp = QgsVectorLayer(uri,"Mapillary","memory")
         temp_data = temp.dataProvider()
         
-        columns=['id','id_mapillary','angle','captured_at','thumb_256','url']
+        columns=['id','id_mapillary','angle','captured_at','thumb_256','url',"x","y","altitude"]
         type=[QVariant.Double,QVariant.Double,QVariant.Double,QVariant.String,QVariant.String,QVariant.String]
 
         sink_fields=QgsFields()
@@ -297,8 +315,6 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
             temp.sourceCrs()
         )
         
-
-        
         
         if sink is None:
             raise QgsProcessingException(self.invalidSinkError(parameters, self.OUTPUT))
@@ -307,7 +323,6 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         #download from Mapillary
         
         user="Null" #NULL
-        pano="false"
 
         extent=str(transform_extent[1])+","+str(transform_extent[0])+","+str(transform_extent[3])+","+str(transform_extent[2])
         if(user!="Null"):
@@ -325,7 +340,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         for i in data:
             feedback.pushInfo(str(int(progress/len(data)*100))+"%")
             progress=progress+1
-            with urllib.request.urlopen("https://graph.mapillary.com/"+i['id']+"?access_token="+api+"&fields=id,computed_geometry,compass_angle,captured_at,thumb_256_url,thumb_original_url") as url:
+            with urllib.request.urlopen("https://graph.mapillary.com/"+i['id']+"?access_token="+api+"&fields=id,computed_geometry,compass_angle,captured_at,thumb_256_url,thumb_original_url,altitude") as url:
                 input = json.load(url)
                 photo={}
                 try:
@@ -336,6 +351,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
                     photo['thumb_original_url']=input['thumb_original_url']
                     photo['x']=input['computed_geometry']['coordinates'][0]
                     photo['y']=input['computed_geometry']['coordinates'][1]
+                    photo["altitiude"]=input["altitude"]
                     collection+=[photo]
                 except:
                     feedback.pushInfo('missing data for '+i['id'])
@@ -345,7 +361,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         for row in df.itertuples():
             #print(row)
             f = QgsFeature()
-            f.setAttributes([row[i] for i in range(0,6)])
+            f.setAttributes([row[i] for i in range(0,9)])
             f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(row[6], row[7])))
             sink.addFeature(f)
         
