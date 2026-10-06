@@ -3,33 +3,19 @@ import pandas as pd
 from pyproj import Transformer
 import urllib.request
 
-#check canvas
-
-project_espg=str(QgsProject.instance().crs().authid())
-destination_espg='EPSG:4326'
-transformer = Transformer.from_crs(project_espg, destination_espg)
-canvas = iface.mapCanvas()
-original_extent=canvas.extent().toString().split(":")
-transform_extent=[]
-for coord in original_extent:
-    coord=[float(i) for i in coord.split(",")]
-    coord=transformer.transform(coord[0],coord[1])
-    transform_extent=transform_extent+[i for i in coord]
-print(transform_extent)
-
 #download from Mapillary
 
-limit_number=10
-start_date="2025-01-11T00:00:00Z"
-end_date="2025-12-31T23:59:59Z"
-user=NULL #NULL
-pano="false"
+limit_number=100
+start_date="2006-01-11T00:00:00Z"
+end_date="2026-12-31T23:59:59Z"
+user="Francesco_Brs" #NULL
+pano="true"
 
-extent=str(transform_extent[1])+","+str(transform_extent[0])+","+str(transform_extent[3])+","+str(transform_extent[2])
-if(user!=NULL):
-    extent+=user
+extent="9.684541257339498,44.898310695762866,9.820800861583075,45.0395098618434"
+url="https://graph.mapillary.com/images?access_token=MLY|4463150933761310|5995ca3757fc4f9a9c8f5e96b2efaa03&fields=id&bbox="+extent+"&creator_username=i"+user+"&limit="+str(limit_number)+"&start_captured_at="+start_date+"&end_captured_at="+end_date+"&is_pano="+str(pano)
+print(url)
 
-with urllib.request.urlopen("https://graph.mapillary.com/images?access_token=MLY|4463150933761310|5995ca3757fc4f9a9c8f5e96b2efaa03&fields=id&bbox="+extent+"&limit="+str(limit_number)+"&start_captured_at="+start_date+"&end_captured_at="+end_date+"&is_pano="+str(pano)) as url:
+with urllib.request.urlopen(url) as url:
     data = json.load(url)['data']
 
 collection=[]
@@ -57,39 +43,3 @@ for i in data:
 
 df=pd.DataFrame(collection)
 
-#add data to QGIS
-
-uri = "point?crs=epsg:4326"
-
-temp = QgsVectorLayer(uri,"Mapillary","memory")
-temp_data = temp.dataProvider()
-# Start of the edition 
-temp.startEditing()
-
-# Creation of my fields 
-columns=['id','id_mapillary','angle','captured_at','thumb_256','url']
-type=[QVariant.Double,QVariant.Double,QVariant.Double,QVariant.String,QVariant.String,QVariant.String]
-
-for i in range(len(type)) : 
-    myField = QgsField(columns[i] ,type[i])
-    temp.addAttribute(myField)
-# Update     
-temp.updateFields()
-
-# Addition of features
-# [1] because i don't want the indexes 
-for row in df.itertuples():
-    print(row)
-    f = QgsFeature()
-    f.setAttributes([row[i] for i in range(0,6)])
-    f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(row[6], row[7])))
-    temp.addFeature(f)
-    
-# saving changes and adding the layer
-fp=urllib.request.urlopen("https://raw.githubusercontent.com/kaheetonaa/mapillary2qgis4all/refs/heads/main/style.qml") 
-mybytes = fp.read()
-mapillary_style = QDomDocument()
-mapillary_style.setContent(mybytes)
-temp.importNamedStyle(mapillary_style)
-temp.commitChanges()
-QgsProject.instance().addMapLayer(temp)
