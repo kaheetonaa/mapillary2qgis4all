@@ -51,7 +51,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterString,
                        QgsProcessingParameterNumber)
 from qgis import processing
-
+from urllib.parse import urlparse
 import urllib.request, json 
 import pandas as pd
 from pyproj import Transformer
@@ -147,7 +147,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterDateTime(
                 self.START_DATE,
                 self.tr('Start date'),
-                type = QgsProcessingParameterDateTime.DateTime,
+                type = QgsProcessingParameterDateTime.Type.DateTime,
                 defaultValue = 'Any'
                 #[QgsProcessing.SourceType.TypeVectorAnyGeometry]
             )
@@ -157,7 +157,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterDateTime(
                 self.END_DATE,
                 self.tr('End date'),
-                type = QgsProcessingParameterDateTime.DateTime,
+                type = QgsProcessingParameterDateTime.Type.DateTime,
                 defaultValue = 'Any'
                 #[QgsProcessing.SourceType.TypeVectorAnyGeometry]
             )
@@ -188,7 +188,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterNumber(
                 self.LIMIT,
                 self.tr('Limitation of downloaded images'),
-                type=QgsProcessingParameterNumber.Integer,
+                type=QgsProcessingParameterNumber.Type.Integer,
                 optional=False,
                 defaultValue = 10
                 #[QgsProcessing.SourceType.TypeVectorAnyGeometry]
@@ -311,7 +311,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
             self.OUTPUT,
             context,
             sink_fields,
-            QgsWkbTypes.Point,
+            QgsWkbTypes.Type.Point,
             temp.sourceCrs()
         )
         
@@ -327,9 +327,15 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         extent=str(transform_extent[1])+","+str(transform_extent[0])+","+str(transform_extent[3])+","+str(transform_extent[2])
         if(user!="Null"):
             extent+=user
+        _url="https://graph.mapillary.com/images?access_token="+api+"&fields=id&bbox="+extent+"&limit="+str(limit)+"&start_captured_at="+start_date_source.toString("yyyy-MM-ddThh:mm:ssZ")+"&end_captured_at="+end_date_source.toString("yyyy-MM-ddThh:mm:ssZ")+"&is_pano="+str(pano)
         
-        feedback.pushInfo("https://graph.mapillary.com/images?access_token="+api+"&fields=id&bbox="+extent+"&limit="+str(limit)+"&start_captured_at="+start_date_source.toString("yyyy-MM-ddThh:mm:ssZ")+"&end_captured_at="+end_date_source.toString("yyyy-MM-ddThh:mm:ssZ")+"&is_pano="+str(pano))
-        with urllib.request.urlopen("https://graph.mapillary.com/images?access_token="+api+"&fields=id&bbox="+extent+"&limit="+str(limit)+"&start_captured_at="+start_date_source.toString("yyyy-MM-ddThh:mm:ssZ")+"&end_captured_at="+end_date_source.toString("yyyy-MM-ddThh:mm:ssZ")+"&is_pano="+str(pano)) as url:
+        url_parsed=urlparse(_url)
+
+        if url_parsed.scheme not in ("http", "https"):
+            raise ValueError("Only HTTP and HTTPS schemes are permitted.")
+
+        feedback.pushInfo(_url)
+        with urllib.request.urlopen(_url) as url:
             data = json.load(url)['data']
 
         collection=[]
@@ -340,7 +346,12 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         for i in data:
             feedback.pushInfo(str(int(progress/len(data)*100))+"%")
             progress=progress+1
-            with urllib.request.urlopen("https://graph.mapillary.com/"+i['id']+"?access_token="+api+"&fields=id,computed_geometry,compass_angle,captured_at,thumb_256_url,thumb_original_url,altitude") as url:
+            _url_photo="https://graph.mapillary.com/"+i['id']+"?access_token="+api+"&fields=id,computed_geometry,compass_angle,captured_at,thumb_256_url,thumb_original_url,altitude"
+            url_parsed=urlparse(_url_photo)
+            if url_parsed.scheme not in ("http", "https"):
+                raise ValueError("Only HTTP and HTTPS schemes are permitted.")
+
+            with urllib.request.urlopen(_url_photo) as url:
                 input = json.load(url)
                 photo={}
                 try:
