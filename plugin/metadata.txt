@@ -6,7 +6,7 @@
 name=Mapillary2QGIS
 qgisMinimumVersion=3.0
 description=This piece of python code will download Mapillary data in QGIS canvas as a Point Vector layer.
-version=0.1
+version=0.2
 author=Quang Huy NGUYEN
 email=quanghuy.nguyen@mail.polimi.it
 
