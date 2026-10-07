@@ -58,7 +58,7 @@ from pyproj import Transformer
 import urllib.request
 
 
-class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
+class Mapillary2QGISSequenceAlgorithm(QgsProcessingAlgorithm):
     """
     This is an example algorithm that takes a vector layer and
     creates a new identical one.
@@ -76,14 +76,11 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
 
-    START_DATE = 'START_DATE'
-    END_DATE = 'END_DATE'
-    OUTPUT = 'OUTPUT'
-    EXTENT='EXTENT'
-    USER='USER'
+    SEQUENCE = 'SEQUENCE'
     API='API'
     LIMIT='LIMIT'
     PANORAMA="PANORAMA"
+    OUTPUT="OUTPUT"
     def tr(self, string):
         """
         Returns a translatable string with the self.tr() function.
@@ -91,7 +88,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return Mapillary2QGISAlgorithm()
+        return Mapillary2QGISSequenceAlgorithm()
 
     def name(self):
         """
@@ -101,14 +98,14 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'mapillary2qgis'
+        return 'mapillary2qgis_sequence'
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr('Mapillary2QGIS - Extent Downloader')
+        return self.tr('Mapillary2QGIS - Sequence Downloader')
 
     def group(self):
         """
@@ -144,25 +141,14 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         # We add the input vector features source. It can have any kind of
         # geometry.
         self.addParameter(
-            QgsProcessingParameterDateTime(
-                self.START_DATE,
-                self.tr('Start date'),
-                type = QgsProcessingParameterDateTime.Type.DateTime,
-                defaultValue = 'Any'
+            QgsProcessingParameterString(
+                self.SEQUENCE,
+                self.tr('Mapillary Sequence id'),
+                optional=False,
+                defaultValue = ''
                 #[QgsProcessing.SourceType.TypeVectorAnyGeometry]
             )
         )
-        
-        self.addParameter(
-            QgsProcessingParameterDateTime(
-                self.END_DATE,
-                self.tr('End date'),
-                type = QgsProcessingParameterDateTime.Type.DateTime,
-                defaultValue = 'Any'
-                #[QgsProcessing.SourceType.TypeVectorAnyGeometry]
-            )
-        )
-        
         self.addParameter(
             QgsProcessingParameterString(
                 self.API,
@@ -171,38 +157,8 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
                 defaultValue = ''
                 #[QgsProcessing.SourceType.TypeVectorAnyGeometry]
             )
-        )
+        )        
         
-        self.addParameter(
-            QgsProcessingParameterBoolean(
-                self.PANORAMA,
-                self.tr('Panoramic photos'),
-                optional=False,
-                defaultValue = False
-                #[QgsProcessing.SourceType.TypeVectorAnyGeometry]
-            )
-        )
-        
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.LIMIT,
-                self.tr('Limitation of downloaded images'),
-                type=QgsProcessingParameterNumber.Type.Integer,
-                optional=False,
-                defaultValue = 10
-                #[QgsProcessing.SourceType.TypeVectorAnyGeometry]
-            )
-        )
-        
-        self.addParameter(
-            QgsProcessingParameterExtent(
-                self.EXTENT,
-                self.tr('Extent'),
-                defaultValue = 'Any'
-                #[QgsProcessing.SourceType.TypeVectorAnyGeometry]
-            )
-        )
 
         # We add a feature sink in which to store our processed features (this
         # usually takes the form of a newly created vector layer when the
@@ -226,39 +182,16 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         # to uniquely identify the feature sink, and must be included in the
         # dictionary returned by the processAlgorithm function.
 
-        start_date_source = self.parameterAsDateTime(
-            parameters,
-            self.START_DATE,
-            context
-        )
-        
-        end_date_source = self.parameterAsDateTime(
-            parameters,
-            self.END_DATE,
-            context
-        )
-        
-        extent= self.parameterAsExtent(
-            parameters,
-            self.EXTENT,
-            context
-        )
-
-        pano= self.parameterAsBoolean(
-            parameters,
-            self.PANORAMA,
-            context
-        )
 
         api=self.parameterAsString(
             parameters,
             self.API,
             context
         )
-        
-        limit=self.parameterAsInt(
+
+        sequence=self.parameterAsString(
             parameters,
-            self.LIMIT,
+            self.SEQUENCE,
             context
         )
 
@@ -266,31 +199,12 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         # encountered a fatal error. The exception text can be any string, but in this
         # case we use the pre-built invalidSourceError method to return a standard
         # helper text for when a source cannot be evaluated
-        if start_date_source is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.START_DATE))
+        if sequence is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.SEQUENCE))
             
         if api is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.START_DATE))
-        
-        if end_date_source is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.END_DATE))
-            
-        #check canvas
-        original_extent=[[extent.xMinimum(),extent.yMinimum()],[extent.xMaximum(),extent.yMaximum()]]
-        project_espg=str(QgsProject.instance().crs().authid())
-        if (project_espg!='EPSG:4326'):
-            destination_espg='EPSG:4326'
-            transformer = Transformer.from_crs(project_espg, destination_espg)
-            
-            transform_extent=[]
-            for coord in original_extent:
-                coord=transformer.transform(coord[0],coord[1])
-                transform_extent=transform_extent+[i for i in coord]
-            #feedback.pushInfo(transform_extent)
-        else:
-            transform_extent=[original_extent[0][1],original_extent[0][0],original_extent[1][1],original_extent[1][0]]
-        
-        
+                
         uri = "point?crs=epsg:4326"
         
         temp = QgsVectorLayer(uri,"Mapillary","memory")
@@ -319,16 +233,9 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         if sink is None:
             raise QgsProcessingException(self.invalidSinkError(parameters, self.OUTPUT))
         
-                #Download data
         #download from Mapillary
-        
-        user="Null" #NULL
-
-        extent=str(transform_extent[1])+","+str(transform_extent[0])+","+str(transform_extent[3])+","+str(transform_extent[2])
-        if(user!="Null"):
-            extent+=user
-        _url="https://graph.mapillary.com/images?access_token="+api+"&fields=id&bbox="+extent+"&limit="+str(limit)+"&start_captured_at="+start_date_source.toString("yyyy-MM-ddThh:mm:ssZ")+"&end_captured_at="+end_date_source.toString("yyyy-MM-ddThh:mm:ssZ")+"&is_pano="+str(pano)
-        
+        #https://graph.mapillary.com/image_ids?access_token=$TOKEN&sequence_id=$SEQUENCE_ID
+        _url="https://graph.mapillary.com/image_ids?access_token="+api+"&sequence_id="+sequence
         url_parsed=urlparse(_url)
 
         if url_parsed.scheme not in ("http", "https"):

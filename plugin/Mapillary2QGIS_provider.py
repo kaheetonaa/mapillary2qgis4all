@@ -32,8 +32,7 @@ __revision__ = '$Format:%H$'
 
 from qgis.core import QgsProcessingProvider
 from .Mapillary2QGIS_algorithm import Mapillary2QGISAlgorithm
-
-
+from .Mapillary2QGISSequence_algorithm import Mapillary2QGISSequenceAlgorithm
 class Mapillary2QGISProvider(QgsProcessingProvider):
 
     def __init__(self):
@@ -54,6 +53,7 @@ class Mapillary2QGISProvider(QgsProcessingProvider):
         Loads all algorithms belonging to this provider.
         """
         self.addAlgorithm(Mapillary2QGISAlgorithm())
+        self.addAlgorithm(Mapillary2QGISSequenceAlgorithm())
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
 
