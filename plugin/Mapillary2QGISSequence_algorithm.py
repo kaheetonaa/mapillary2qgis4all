@@ -75,7 +75,7 @@ class Mapillary2QGISSequenceAlgorithm(QgsProcessingAlgorithm):
     # Constants used to refer to parameters and outputs. They will be
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
-
+    COMPUTED="COMPUTED"
     SEQUENCE = 'SEQUENCE'
     API='API'
     LIMIT='LIMIT'
@@ -158,7 +158,15 @@ class Mapillary2QGISSequenceAlgorithm(QgsProcessingAlgorithm):
                 #[QgsProcessing.SourceType.TypeVectorAnyGeometry]
             )
         )        
-        
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.COMPUTED,
+                self.tr('To use computed GPS location'),
+                optional=False,
+                defaultValue = False
+                #[QgsProcessing.SourceType.TypeVectorAnyGeometry]
+            )
+        )
 
         # We add a feature sink in which to store our processed features (this
         # usually takes the form of a newly created vector layer when the
@@ -194,6 +202,15 @@ class Mapillary2QGISSequenceAlgorithm(QgsProcessingAlgorithm):
             self.SEQUENCE,
             context
         )
+        computed= self.parameterAsBoolean(
+            parameters,
+            self.COMPUTED,
+            context
+        )
+
+        computed_str=""
+        if computed==True:
+            computed_str="computed_"
 
         # If source was not found, throw an exception to indicate that the algorithm
         # encountered a fatal error. The exception text can be any string, but in this
@@ -253,7 +270,7 @@ class Mapillary2QGISSequenceAlgorithm(QgsProcessingAlgorithm):
         for i in data:
             feedback.pushInfo(str(int(progress/len(data)*100))+"%")
             progress=progress+1
-            _url_photo="https://graph.mapillary.com/"+i['id']+"?access_token="+api+"&fields=id,computed_geometry,compass_angle,captured_at,thumb_256_url,thumb_original_url,altitude"
+            _url_photo="https://graph.mapillary.com/"+i['id']+"?access_token="+api+"&fields=id,"+computed_str+"geometry,compass_angle,captured_at,thumb_256_url,thumb_original_url,altitude"
             url_parsed=urlparse(_url_photo)
             if url_parsed.scheme not in ("http", "https"):
                 raise ValueError("Only HTTP and HTTPS schemes are permitted.")
@@ -267,8 +284,8 @@ class Mapillary2QGISSequenceAlgorithm(QgsProcessingAlgorithm):
                     photo['captured_at']=input['captured_at']
                     photo['thumb_256_url']=input['thumb_256_url']
                     photo['thumb_original_url']=input['thumb_original_url']
-                    photo['x']=input['computed_geometry']['coordinates'][0]
-                    photo['y']=input['computed_geometry']['coordinates'][1]
+                    photo['x']=input[computed_str+'geometry']['coordinates'][0]
+                    photo['y']=input[computed_str+'geometry']['coordinates'][1]
                     photo["altitiude"]=input["altitude"]
                     collection+=[photo]
                 except:

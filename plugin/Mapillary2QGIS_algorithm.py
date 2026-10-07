@@ -75,7 +75,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
     # Constants used to refer to parameters and outputs. They will be
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
-
+    COMPUTED="COMPUTED"
     START_DATE = 'START_DATE'
     END_DATE = 'END_DATE'
     OUTPUT = 'OUTPUT'
@@ -141,8 +141,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         with some other properties.
         """
 
-        # We add the input vector features source. It can have any kind of
-        # geometry.
+        # We add the input vector features source. It can have any kind of geometry.
         self.addParameter(
             QgsProcessingParameterDateTime(
                 self.START_DATE,
@@ -183,6 +182,15 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
             )
         )
         
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.COMPUTED,
+                self.tr('To use computed GPS location'),
+                optional=False,
+                defaultValue = False
+                #[QgsProcessing.SourceType.TypeVectorAnyGeometry]
+            )
+        )
 
         self.addParameter(
             QgsProcessingParameterNumber(
@@ -248,8 +256,13 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
             parameters,
             self.PANORAMA,
             context
-        )
+        ) 
 
+        computed= self.parameterAsBoolean(
+            parameters,
+            self.COMPUTED,
+            context
+        )
         api=self.parameterAsString(
             parameters,
             self.API,
@@ -274,7 +287,9 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         
         if end_date_source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.END_DATE))
-            
+        computed_str=""
+        if computed==True:
+            computed_str="computed_"
         #check canvas
         original_extent=[[extent.xMinimum(),extent.yMinimum()],[extent.xMaximum(),extent.yMaximum()]]
         project_espg=str(QgsProject.instance().crs().authid())
@@ -346,7 +361,7 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
         for i in data:
             feedback.pushInfo(str(int(progress/len(data)*100))+"%")
             progress=progress+1
-            _url_photo="https://graph.mapillary.com/"+i['id']+"?access_token="+api+"&fields=id,computed_geometry,compass_angle,captured_at,thumb_256_url,thumb_original_url,altitude"
+            _url_photo="https://graph.mapillary.com/"+i['id']+"?access_token="+api+"&fields=id,"+computed_str+"geometry,compass_angle,captured_at,thumb_256_url,thumb_original_url,altitude"
             url_parsed=urlparse(_url_photo)
             if url_parsed.scheme not in ("http", "https"):
                 raise ValueError("Only HTTP and HTTPS schemes are permitted.")
@@ -360,8 +375,8 @@ class Mapillary2QGISAlgorithm(QgsProcessingAlgorithm):
                     photo['captured_at']=input['captured_at']
                     photo['thumb_256_url']=input['thumb_256_url']
                     photo['thumb_original_url']=input['thumb_original_url']
-                    photo['x']=input['computed_geometry']['coordinates'][0]
-                    photo['y']=input['computed_geometry']['coordinates'][1]
+                    photo['x']=input[computed_str+'geometry']['coordinates'][0]
+                    photo['y']=input[computed_str+'geometry']['coordinates'][1]
                     photo["altitiude"]=input["altitude"]
                     collection+=[photo]
                 except:
